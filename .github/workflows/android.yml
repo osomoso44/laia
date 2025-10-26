@@ -1,0 +1,47 @@
+name: Android CI
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v5
+    - name: set up JDK 17
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'zulu'
+        java-version: 17
+
+    - name: kotlinUpgradeYarnLock
+      run: ./gradlew kotlinUpgradeYarnLock
+
+
+    - name: Build android app
+      run: ./gradlew :app:assembleDebug
+
+    - name: Run Unit Tests
+      run: ./gradlew :app:test
+
+
+  androidTest:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Android Instrumentation Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 26
+          arch: x86
+          disable-animations: true
+          script: ./gradlew app:connectedAndroidTest
