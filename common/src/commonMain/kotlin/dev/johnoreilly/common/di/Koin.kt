@@ -34,7 +34,7 @@ fun initKoin(enableNetworkLogs: Boolean = false, appDeclaration: KoinAppDeclarat
 fun initKoin() = initKoin(enableNetworkLogs = false)
 
 @Configuration
-@Module(includes = [CommonModule::class, ViewModelModule::class])
+@Module(includes = [CommonModule::class, ViewModelModule::class, VoiceModule::class, VoiceNativeModule::class])
 class AppModule
 
 @Module(includes = [NativeModule::class])

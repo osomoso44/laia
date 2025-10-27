@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import dev.johnoreilly.common.viewmodel.ISSPositionViewModel
 import dev.johnoreilly.common.viewmodel.PersonListViewModel
+import dev.johnoreilly.common.viewmodel.VoiceViewModel
 import dev.johnoreilly.peopleinspace.db.PeopleInSpaceDatabase
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.darwin.Darwin
@@ -22,6 +23,9 @@ actual class ViewModelModule {
 
     @Factory
     fun iSSPositionViewModel() = ISSPositionViewModel()
+    
+    @Factory
+    fun voiceViewModel() = VoiceViewModel()
 }
 
 @Module

@@ -55,6 +55,7 @@ kotlin {
             implementation(libs.bundles.ktor.common)
             implementation(libs.kotlinx.coroutines)
             api(libs.kotlinx.serialization)
+            implementation(libs.kotlinx.datetime)
 
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines.extensions)

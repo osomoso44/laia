@@ -13,6 +13,10 @@
 		1A3AB67E2A2289B700296F07 /* ISSPositionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3AB5DF2A22247A00296F07 /* ISSPositionScreen.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		9526DD5B2EAFC45F00B8C650 /* VoiceNativeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9526DD592EAFC45F00B8C650 /* VoiceNativeService.swift */; };
+		9526DD5C2EAFC45F00B8C650 /* VoiceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9526DD5A2EAFC45F00B8C650 /* VoiceScreen.swift */; };
+		9526DD5D2EAFC45F00B8C650 /* VoiceNativeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9526DD592EAFC45F00B8C650 /* VoiceNativeService.swift */; };
+		9526DD5E2EAFC45F00B8C650 /* VoiceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9526DD5A2EAFC45F00B8C650 /* VoiceScreen.swift */; };
 		DB4B5B522C302841009CBB43 /* NativeViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B5B512C302841009CBB43 /* NativeViewFactory.swift */; };
 		DB4B5B542C3028B5009CBB43 /* NativeISSMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4B5B532C3028B5009CBB43 /* NativeISSMapView.swift */; };
 /* End PBXBuildFile section */
@@ -61,6 +65,8 @@
 		7555FF7B242A565900829871 /* PeopleInSpaceSwiftUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeopleInSpaceSwiftUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9526DD592EAFC45F00B8C650 /* VoiceNativeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceNativeService.swift; sourceTree = "<group>"; };
+		9526DD5A2EAFC45F00B8C650 /* VoiceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceScreen.swift; sourceTree = "<group>"; };
 		DB4B5B512C302841009CBB43 /* NativeViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeViewFactory.swift; sourceTree = "<group>"; };
 		DB4B5B532C3028B5009CBB43 /* NativeISSMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeISSMapView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -112,6 +118,8 @@
 		7555FF7D242A565900829871 /* PeopleInSpaceSwiftUI */ = {
 			isa = PBXGroup;
 			children = (
+				9526DD592EAFC45F00B8C650 /* VoiceNativeService.swift */,
+				9526DD5A2EAFC45F00B8C650 /* VoiceScreen.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
@@ -280,6 +288,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A3AB67E2A2289B700296F07 /* ISSPositionScreen.swift in Sources */,
+				9526DD5B2EAFC45F00B8C650 /* VoiceNativeService.swift in Sources */,
+				9526DD5C2EAFC45F00B8C650 /* VoiceScreen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -292,6 +302,8 @@
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 				DB4B5B542C3028B5009CBB43 /* NativeISSMapView.swift in Sources */,
 				1A3AB5E02A22247A00296F07 /* ISSPositionScreen.swift in Sources */,
+				9526DD5D2EAFC45F00B8C650 /* VoiceNativeService.swift in Sources */,
+				9526DD5E2EAFC45F00B8C650 /* VoiceScreen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

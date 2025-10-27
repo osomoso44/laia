@@ -13,6 +13,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("ISS Position", systemImage: "location")
                 }
+            VoiceScreen()
+                .tabItem {
+                    Label("Voice", systemImage: "mic")
+                }
         }
     }
 }
