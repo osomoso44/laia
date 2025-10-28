@@ -2,10 +2,8 @@ package dev.johnoreilly.common.model
 
 sealed class VoiceState {
     object Idle : VoiceState()
-    object Initializing : VoiceState()
     object Listening : VoiceState()
     data class Recording(val duration: Long) : VoiceState()
-    data class Processing(val filePath: String) : VoiceState()
     data class Ready(val lastRecording: String?) : VoiceState()
     data class Playing(val filePath: String, val position: Long) : VoiceState()
     data class Error(val message: String) : VoiceState()

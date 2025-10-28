@@ -2,8 +2,8 @@ import SwiftUI
 import common
 
 struct VoiceScreen: View {
-    @StateObject private var viewModel = VoiceViewModel()
-    
+    @State var viewModel = VoiceViewModel()
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -12,37 +12,48 @@ struct VoiceScreen: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .padding(.bottom, 10)
-                    
-                    StatusCard(
-                        voiceState: viewModel.voiceState,
-                        microphonePermission: viewModel.microphonePermission
-                    )
-                    
-                    VoiceControlsCard(
-                        voiceState: viewModel.voiceState,
-                        microphonePermission: viewModel.microphonePermission,
-                        onStartListening: { viewModel.startListening() },
-                        onStopListening: { viewModel.stopListening() },
-                        onRequestPermission: { viewModel.requestMicrophonePermission() }
-                    )
-                    
-                    if viewModel.lastRecording != nil {
-                        PlaybackControlsCard(
-                            isPlaying: viewModel.isPlaying,
-                            onPlay: { viewModel.playLastRecording() },
-                            onPause: { viewModel.pausePlayback() },
-                            onStop: { viewModel.stopPlayback() },
-                            onDelete: { viewModel.deleteLastRecording() }
-                        )
+
+                    Observing(viewModel.voiceState) { voiceState in
+                        Observing(viewModel.microphonePermission) { microphonePermission in
+                            StatusCard(
+                                voiceState: voiceState,
+                                microphonePermission: microphonePermission
+                            )
+                        }
                     }
-                    
-                    if !viewModel.recordingList.isEmpty {
-                        RecordingsList(
-                            recordings: viewModel.recordingList,
-                            onPlayRecording: { filePath in
-                                viewModel.playLastRecording()
+
+                    Observing(viewModel.voiceState) { voiceState in
+                        Observing(viewModel.microphonePermission) { microphonePermission in
+                            VoiceControlsCard(
+                                voiceState: voiceState,
+                                microphonePermission: microphonePermission,
+                                onStartListening: { Task { try? await viewModel.startListening() } },
+                                onStopListening: { Task { try? await viewModel.stopListening() } },
+                                onRequestPermission: { Task { try? await viewModel.requestMicrophonePermission() } }
+                            )
+                        }
+                    }
+
+
+                    Observing(viewModel.recordingList) { recordingList in
+                        if !recordingList.isEmpty {
+                            Observing(viewModel.currentlyPlayingId) { currentlyPlayingId in
+                                RecordingsList(
+                                    recordings: recordingList,
+                                    currentlyPlayingId: currentlyPlayingId,
+                                    onPlayRecording: { recordingId in
+                                        Task { try? await viewModel.playRecording(recordingId: recordingId) }
+                                    },
+                                    onStopRecording: { recordingId in
+                                        Task { try? await viewModel.stopRecording(recordingId: recordingId) }
+                                    }
+                                )
                             }
-                        )
+                        } else {
+                            Text("No hay grabaciones disponibles")
+                                .foregroundColor(.secondary)
+                                .padding()
+                        }
                     }
                 }
                 .padding()
@@ -51,7 +62,7 @@ struct VoiceScreen: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
-            viewModel.requestMicrophonePermission()
+            Task { try? await viewModel.requestMicrophonePermission() }
         }
     }
 }
@@ -86,7 +97,7 @@ struct StatusCard: View {
     }
     
     private var statusColor: Color {
-        switch voiceState {
+        switch onEnum(of: voiceState) {
         case .idle, .ready:
             return .green
         case .listening, .recording:
@@ -99,7 +110,7 @@ struct StatusCard: View {
     }
     
     private var statusText: String {
-        switch voiceState {
+        switch onEnum(of: voiceState) {
         case .idle:
             return "Inactivo"
         case .listening:
@@ -111,18 +122,20 @@ struct StatusCard: View {
         case .error:
             return "Error"
         default:
-            return voiceState.rawValue
+            return "Desconocido"
         }
     }
     
     private var microphonePermissionText: String {
-        switch microphonePermission {
+        switch onEnum(of: microphonePermission) {
         case .notRequested:
             return "No solicitado"
         case .granted:
             return "Permitido"
         case .denied:
             return "Denegado"
+        case .restricted:
+            return "Restringido"
         }
     }
 }
@@ -141,7 +154,8 @@ struct VoiceControlsCard: View {
             Text("Controles")
                 .font(.headline)
             
-            if microphonePermission == .notRequested || microphonePermission == .denied {
+            switch onEnum(of: microphonePermission) {
+            case .notRequested, .denied:
                 Button(action: onRequestPermission) {
                     HStack {
                         Image(systemName: "mic.fill")
@@ -153,12 +167,12 @@ struct VoiceControlsCard: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-            } else {
+            case .granted, .restricted:
                 HStack(spacing: 16) {
                     Button(action: onStartListening) {
                         HStack {
-                            Image(systemName: "mic.fill")
-                            Text("Iniciar Escucha")
+                            Image(systemName: "play.fill")
+                            Text("Iniciar Detección")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -171,7 +185,7 @@ struct VoiceControlsCard: View {
                     Button(action: onStopListening) {
                         HStack {
                             Image(systemName: "stop.fill")
-                            Text("Detener")
+                            Text("Detener Detección")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -189,11 +203,21 @@ struct VoiceControlsCard: View {
     }
     
     private var canStartListening: Bool {
-        voiceState == .idle || voiceState == .ready || voiceState == .error
+        switch onEnum(of: voiceState) {
+        case .idle, .ready, .error:
+            return true
+        default:
+            return false
+        }
     }
     
     private var canStopListening: Bool {
-        voiceState == .listening || voiceState == .recording
+        switch onEnum(of: voiceState) {
+        case .listening, .recording:
+            return true
+        default:
+            return false
+        }
     }
 }
 
@@ -258,7 +282,9 @@ struct PlaybackControlsCard: View {
 
 struct RecordingsList: View {
     let recordings: [AudioFile]
+    let currentlyPlayingId: String?
     let onPlayRecording: (String) -> Void
+    let onStopRecording: (String) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -268,7 +294,9 @@ struct RecordingsList: View {
             ForEach(recordings) { recording in
                 RecordingItem(
                     recording: recording,
-                    onPlayRecording: onPlayRecording
+                    isPlaying: currentlyPlayingId == recording.id,
+                    onPlayRecording: onPlayRecording,
+                    onStopRecording: onStopRecording
                 )
             }
         }
@@ -282,7 +310,9 @@ struct RecordingsList: View {
 
 struct RecordingItem: View {
     let recording: AudioFile
+    let isPlaying: Bool
     let onPlayRecording: (String) -> Void
+    let onStopRecording: (String) -> Void
     
     var body: some View {
         HStack {
@@ -298,10 +328,16 @@ struct RecordingItem: View {
             
             Spacer()
             
-            Button(action: { onPlayRecording(recording.filePath) }) {
-                Image(systemName: "play.fill")
+            Button(action: { 
+                if isPlaying {
+                    onStopRecording(recording.id)
+                } else {
+                    onPlayRecording(recording.id)
+                }
+            }) {
+                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                     .frame(width: 32, height: 32)
-                    .background(Color.blue)
+                    .background(isPlaying ? Color.red : Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(16)
             }
@@ -312,144 +348,15 @@ struct RecordingItem: View {
 
 // MARK: - VoiceViewModel SwiftUI Integration
 
-class VoiceViewModel: ObservableObject {
-    @Published var voiceState: VoiceState = .idle
-    @Published var microphonePermission: MicrophonePermission = .notRequested
-    @Published var lastRecording: String? = nil
-    @Published var isPlaying: Bool = false
-    @Published var recordingList: [AudioFile] = []
-    
-    private var isListening = false
-    
-    init() {
-        // Initialize with granted permission for demo
-        microphonePermission = .granted
-    }
-    
-    func startListening() {
-        print("🎤 Starting continuous voice listening...")
-        isListening = true
-        voiceState = .listening
-        
-        // Simulate continuous voice detection and recording
-        simulateContinuousRecording()
-    }
-    
-    private func simulateContinuousRecording() {
-        guard isListening else { return }
-        
-        // Simulate voice detection every 3-5 seconds
-        let randomDelay = Double.random(in: 3.0...5.0)
-        DispatchQueue.main.asyncAfter(deadline: .now() + randomDelay) {
-            if self.isListening {
-                print("🎤 Voice detected! Starting recording...")
-                self.voiceState = .recording
-                
-                // Simulate recording duration (2-4 seconds)
-                let recordingDuration = Double.random(in: 2.0...4.0)
-                DispatchQueue.main.asyncAfter(deadline: .now() + recordingDuration) {
-                    if self.isListening {
-                        print("🎤 Recording completed! Adding to list...")
-                        
-                        // Create new recording
-                        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
-                        let newRecording = AudioFile(
-                            id: "recording_\(timestamp)",
-                            filePath: "recording_\(timestamp).wav",
-                            timestamp: timestamp,
-                            duration: Int64(recordingDuration * 1000),
-                            fileSize: Int64.random(in: 100000...500000), // Random file size
-                            sampleRate: 44100,
-                            channels: 1
-                        )
-                        
-                        // Add to recording list (most recent first)
-                        self.recordingList.insert(newRecording, at: 0)
-                        self.lastRecording = newRecording.filePath
-                        self.voiceState = .ready
-                        
-                        print("🎤 Added recording: \(newRecording.id) (Duration: \(Int(recordingDuration))s)")
-                        
-                        // Continue listening for more voice
-                        self.simulateContinuousRecording()
-                    }
-                }
-            }
-        }
-    }
-    
-    func stopListening() {
-        print("🎤 Stopping voice listening...")
-        isListening = false
-        voiceState = .idle
-    }
-    
-    func requestMicrophonePermission() {
-        print("🎤 Requesting microphone permission...")
-        microphonePermission = .granted
-    }
-    
-    func playLastRecording() {
-        guard let filePath = lastRecording else { return }
-        print("🔊 Playing audio from \(filePath)")
-        isPlaying = true
-        voiceState = .playing
-        
-        // Simulate playback completion after 3 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.isPlaying = false
-            self.voiceState = .ready
-        }
-    }
-    
-    func pausePlayback() {
-        print("🔊 Pausing audio")
-        isPlaying = false
-        voiceState = .paused
-    }
-    
-    func stopPlayback() {
-        print("🔊 Stopping audio")
-        isPlaying = false
-        voiceState = .ready
-    }
-    
-    func deleteLastRecording() {
-        print("🗑️ Deleting last recording")
-        lastRecording = nil
-        if !recordingList.isEmpty {
-            recordingList.removeFirst()
-        }
-        voiceState = .idle
-    }
-}
+// Using the shared VoiceViewModel directly from Kotlin
 
-// MARK: - Enums for SwiftUI
+// MARK: - Using shared types from Kotlin
 
-enum VoiceState: String, CaseIterable {
-    case idle = "idle"
-    case listening = "listening"
-    case recording = "recording"
-    case ready = "ready"
-    case playing = "playing"
-    case paused = "paused"
-    case error = "error"
-}
+// VoiceState, MicrophonePermission, and AudioFile are now used directly from the shared module
 
-enum MicrophonePermission: String, CaseIterable {
-    case notRequested = "notRequested"
-    case granted = "granted"
-    case denied = "denied"
-}
-
-struct AudioFile: Identifiable {
-    let id: String
-    let filePath: String
-    let timestamp: Int64
-    let duration: Int64
-    let fileSize: Int64
-    let sampleRate: Int32
-    let channels: Int32
+// Make AudioFile conform to Identifiable for SwiftUI
+extension AudioFile: @retroactive Identifiable {
+    // AudioFile already has an `id` property from the common module
 }
 
 #Preview {

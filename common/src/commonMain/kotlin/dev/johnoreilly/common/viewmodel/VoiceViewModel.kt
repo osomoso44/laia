@@ -29,6 +29,9 @@ class VoiceViewModel : ViewModel(), KoinComponent {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     
+    private val _currentlyPlayingId = MutableStateFlow<String?>(null)
+    val currentlyPlayingId: StateFlow<String?> = _currentlyPlayingId.asStateFlow()
+    
     private val _recordingList = MutableStateFlow<List<AudioFile>>(emptyList())
     val recordingList: StateFlow<List<AudioFile>> = _recordingList.asStateFlow()
     
@@ -41,15 +44,20 @@ class VoiceViewModel : ViewModel(), KoinComponent {
         voiceNativeService.setEventCallback { event ->
             when (event) {
                 is VoiceEvent.VoiceDetected -> {
-                    _voiceState.value = VoiceState.Recording(event.timestamp)
+                    // Change to recording state when voice is detected
+                    _voiceState.value = VoiceState.Recording(0L)
+                    println("🎤 Voice detected - changing to recording state")
                 }
                 is VoiceEvent.RecordingStarted -> {
-                    _voiceState.value = VoiceState.Recording(event.timestamp)
+                    // Update recording state with duration
+                    _voiceState.value = VoiceState.Recording(0L)
+                    println("🎤 Recording started")
                 }
                 is VoiceEvent.RecordingCompleted -> {
                     _lastRecording.value = event.filePath
-                    _voiceState.value = VoiceState.Processing(event.filePath)
-                    
+                    println("🎤 Recording completed - returning to listening state")
+                    // Return to listening state after recording is completed
+                    _voiceState.value = VoiceState.Listening
                     viewModelScope.launch {
                         try {
                             val audioFile = AudioFile(
@@ -62,7 +70,7 @@ class VoiceViewModel : ViewModel(), KoinComponent {
                                 channels = 1
                             )
                             voiceRepository.saveRecording(audioFile)
-                            _voiceState.value = VoiceState.Ready(event.filePath)
+                            println("🎤 Saved recording: ${audioFile.id}")
                             loadRecordings()
                         } catch (e: Exception) {
                             _voiceState.value = VoiceState.Error("Failed to save recording: ${e.message}")
@@ -82,18 +90,34 @@ class VoiceViewModel : ViewModel(), KoinComponent {
             }
         }
         
-        audioPlayerService.isPlaying.onEach { playing ->
-            _isPlaying.value = playing
-        }.launchIn(viewModelScope)
+        // TODO: Implement isPlaying observation when AudioPlayerService supports it
     }
     
     private fun loadRecordings() {
         viewModelScope.launch {
             try {
                 val recordings = voiceRepository.getAllRecordings()
+                println("🎤 Loaded ${recordings.size} recordings")
                 _recordingList.value = recordings
+                
+                // Update lastRecording and state based on recordings
+                if (recordings.isNotEmpty()) {
+                    _lastRecording.value = recordings.first().filePath
+                    println("🎤 Last recording: ${recordings.first().filePath}")
+                    // Only update state if we're not currently listening or recording
+                    if (_voiceState.value !is VoiceState.Listening && _voiceState.value !is VoiceState.Recording) {
+                        _voiceState.value = VoiceState.Ready(recordings.first().filePath)
+                    }
+                } else {
+                    _lastRecording.value = null
+                    println("🎤 No recordings found")
+                    // Only update state if we're not currently listening or recording
+                    if (_voiceState.value !is VoiceState.Listening && _voiceState.value !is VoiceState.Recording) {
+                        _voiceState.value = VoiceState.Idle
+                    }
+                }
             } catch (e: Exception) {
-                // Handle error silently for now
+                println("🎤 Error loading recordings: ${e.message}")
             }
         }
     }
@@ -108,7 +132,6 @@ class VoiceViewModel : ViewModel(), KoinComponent {
             return
         }
         
-        _voiceState.value = VoiceState.Initializing
         try {
             voiceNativeService.startListening()
             _voiceState.value = VoiceState.Listening
@@ -139,12 +162,43 @@ class VoiceViewModel : ViewModel(), KoinComponent {
         }
     }
     
+    suspend fun playRecording(recordingId: String) {
+        val recording = _recordingList.value.find { it.id == recordingId } ?: return
+        
+        try {
+            _isPlaying.value = true
+            _currentlyPlayingId.value = recordingId
+            audioPlayerService.playAudio(recording.filePath)
+            _isPlaying.value = false
+            _currentlyPlayingId.value = null
+        } catch (e: Exception) {
+            _isPlaying.value = false
+            _currentlyPlayingId.value = null
+            _voiceState.value = VoiceState.Error("Failed to play recording: ${e.message}")
+        }
+    }
+    
+    suspend fun stopRecording(recordingId: String) {
+        if (_currentlyPlayingId.value == recordingId) {
+            try {
+                audioPlayerService.stopAudio()
+                _isPlaying.value = false
+                _currentlyPlayingId.value = null
+            } catch (e: Exception) {
+                _voiceState.value = VoiceState.Error("Failed to stop recording: ${e.message}")
+            }
+        }
+    }
+    
     suspend fun playLastRecording() {
         val recording = _lastRecording.value ?: return
         
         try {
+            _isPlaying.value = true
             audioPlayerService.playAudio(recording)
+            _isPlaying.value = false
         } catch (e: Exception) {
+            _isPlaying.value = false
             _voiceState.value = VoiceState.Error("Failed to play recording: ${e.message}")
         }
     }
@@ -152,6 +206,7 @@ class VoiceViewModel : ViewModel(), KoinComponent {
     suspend fun pausePlayback() {
         try {
             audioPlayerService.pauseAudio()
+            _isPlaying.value = false
         } catch (e: Exception) {
             _voiceState.value = VoiceState.Error("Failed to pause playback: ${e.message}")
         }
@@ -160,6 +215,7 @@ class VoiceViewModel : ViewModel(), KoinComponent {
     suspend fun stopPlayback() {
         try {
             audioPlayerService.stopAudio()
+            _isPlaying.value = false
         } catch (e: Exception) {
             _voiceState.value = VoiceState.Error("Failed to stop playback: ${e.message}")
         }

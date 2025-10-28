@@ -1,58 +1,37 @@
 package dev.johnoreilly.common.service
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 
-class AudioPlayerServiceIOS : AudioPlayerService {
-    
-    private val _isPlaying = MutableStateFlow(false)
-    private val _playbackPosition = MutableStateFlow(0L)
-    
-    override val isPlaying: StateFlow<Boolean> = _isPlaying
-    override val playbackPosition: StateFlow<Long> = _playbackPosition
-    
-    override suspend fun playAudio(filePath: String): Result<Unit> {
-        return try {
-            // TODO: Implement actual iOS audio playback using AVAudioPlayer
-            _isPlaying.value = true
-            _playbackPosition.value = 0L
-            
-            // Simulate playback
-            kotlinx.coroutines.delay(100)
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+actual class AudioPlayerService {
+    private var completionCallback: ((String) -> Unit)? = null
+    private var currentPlayingFilePath: String? = null
+
+    actual fun setCompletionCallback(callback: (String) -> Unit) {
+        this.completionCallback = callback
+    }
+
+    actual suspend fun playAudio(filePath: String) {
+        println("🔊 iOS Native Service: Playing audio from $filePath")
+        currentPlayingFilePath = filePath
+        // TODO: Implement actual iOS audio playback using AVAudioPlayer
+        // For now, simulate playback completion after 3 seconds
+        delay(3000)
+        currentPlayingFilePath?.let {
+            completionCallback?.invoke(it)
         }
+        currentPlayingFilePath = null
     }
-    
-    override suspend fun pauseAudio(): Result<Unit> {
-        return try {
-            // TODO: Implement actual pause
-            _isPlaying.value = false
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+
+    actual suspend fun pauseAudio() {
+        println("🔊 iOS Native Service: Pausing audio")
+        // TODO: Implement actual pause
+    }
+
+    actual suspend fun stopAudio() {
+        println("🔊 iOS Native Service: Stopping audio")
+        currentPlayingFilePath?.let {
+            completionCallback?.invoke(it)
         }
-    }
-    
-    override suspend fun stopAudio(): Result<Unit> {
-        return try {
-            // TODO: Implement actual stop
-            _isPlaying.value = false
-            _playbackPosition.value = 0L
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    override suspend fun getPlaybackPosition(): Long {
-        return _playbackPosition.value
-    }
-    
-    override suspend fun getDuration(): Long {
-        // TODO: Implement actual duration calculation
-        return 3000L // 3 seconds for simulation
+        currentPlayingFilePath = null
     }
 }

@@ -5,6 +5,7 @@ import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import dev.johnoreilly.common.viewmodel.ISSPositionViewModel
 import dev.johnoreilly.common.viewmodel.PersonListViewModel
+import dev.johnoreilly.common.viewmodel.VoiceViewModel
 import dev.johnoreilly.peopleinspace.db.PeopleInSpaceDatabase
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.android.Android
@@ -23,6 +24,9 @@ actual class ViewModelModule {
 
     @KoinViewModel
     fun iSSPositionViewModel() = ISSPositionViewModel()
+
+    @KoinViewModel
+    fun voiceViewModel() = VoiceViewModel()
 }
 
 @Module

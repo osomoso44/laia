@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -28,6 +29,7 @@ import dev.johnoreilly.peopleinspace.R
 import dev.johnoreilly.peopleinspace.issposition.ISSPositionRoute
 import dev.johnoreilly.peopleinspace.persondetails.PersonDetailsScreen
 import dev.johnoreilly.peopleinspace.personlist.PersonListRoute
+import dev.johnoreilly.common.ui.VoiceScreenAndroid
 import kotlinx.coroutines.launch
 
 enum class AppDestinations(
@@ -37,6 +39,7 @@ enum class AppDestinations(
 ) {
     PERSON_LIST(R.string.people, Icons.Default.Person, R.string.people),
     ISS_POSITION(R.string.iss_position, Icons.Default.LocationOn, R.string.iss_position),
+    VOICE(R.string.voice, Icons.Default.PlayArrow, R.string.voice),
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -97,6 +100,9 @@ fun PeopleInSpaceApp() {
                 }
                 AppDestinations.ISS_POSITION -> {
                     ISSPositionRoute()
+                }
+                AppDestinations.VOICE -> {
+                    VoiceScreenAndroid()
                 }
             }
         }

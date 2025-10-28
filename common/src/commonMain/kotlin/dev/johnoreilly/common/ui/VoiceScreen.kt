@@ -121,10 +121,8 @@ private fun VoiceStatusCard(
             Text(
                 text = when (voiceState) {
                     is VoiceState.Idle -> "Ready to start"
-                    is VoiceState.Initializing -> "Initializing..."
                     is VoiceState.Listening -> "Listening for voice..."
                     is VoiceState.Recording -> "Recording... (${voiceState.duration}ms)"
-                    is VoiceState.Processing -> "Processing recording..."
                     is VoiceState.Ready -> "Ready - Recording available"
                     is VoiceState.Playing -> "Playing audio..."
                     is VoiceState.Error -> "Error: ${voiceState.message}"
